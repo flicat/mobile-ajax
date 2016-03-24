@@ -182,7 +182,10 @@ var ajax = (function() {
     /**
      * @param {String} type
      * @param {String} url
+     * @param {Boolean} async
+     * @param {Number} timeout
      * @param {Object} data
+     * @param {Object} header
      * @param {String} dataType
      * @param {String} jsonp
      * @param {Function} success
