@@ -13,11 +13,9 @@
     <script>
         ajax({
             type: 'GET',
-            url: 'audio/audio.mp3',
-            header: {
-                'Content-Type': 'audio/mp3'
-            },
-            dataType: 'text',
+            url: 'test.php',
+            dataType: 'json',
+            data: {test: 'test'},
             success: function(data) {
                 console.log('success');
             },
