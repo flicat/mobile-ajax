@@ -8,6 +8,20 @@
 var ajax = (function() {
 
     /**
+     * @param {Object} object
+     * @param {Function} callback
+     * @return {undefined}
+     * @description 遍历对象
+     */
+    var forEachIn = function(object, callback) {
+        for(var key in object) {
+            if(object.hasOwnProperty(key)){
+                callback(key, object[key]);
+            }
+        }
+    };
+
+    /**
      * @param {Object} data
      * @return {String}
      * @description 转换查询字段
@@ -15,11 +29,9 @@ var ajax = (function() {
     var getQueryStr = function(data) {
         var str = [];
         data = data || {};
-        for(var i in data) {
-            if(data.hasOwnProperty(i)){
-                str.push(encodeURIComponent(i) + '=' + encodeURIComponent(data[i]));
-            }
-        }
+        forEachIn(data, function(i, item) {
+            str.push(encodeURIComponent(i) + '=' + encodeURIComponent(item));
+        });
         return str.join('&');
     };
 
@@ -49,10 +61,14 @@ var ajax = (function() {
      */
     var ajax = function(param) {
 
-        var xhr = new XMLHttpRequest(), postData;
+        var xhr = new XMLHttpRequest(), postData, timeoutTimer;
+
         xhr.onreadystatechange = function() {
             if(xhr.readyState === 4){
+
                 xhr.onreadystatechange = null;
+                timeoutTimer && clearTimeout(timeoutTimer);
+
                 if((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
                     var data;
                     // 根据请求的数据类型转换数据
@@ -84,9 +100,22 @@ var ajax = (function() {
             postData = getQueryStr(param.data);
         }
 
-        xhr.open(param.type, param.url, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        // 请求超时
+        param.timeout = Number(param.timeout) || 0;
+
+        xhr.open(param.type, param.url, !!param.async);
+
+        forEachIn(param.header, function(name, value) {
+            xhr.setRequestHeader(name, value);
+        });
         xhr.send(postData);
+
+        if(param.timeout && param.timeout > 0){
+            timeoutTimer = setTimeout(function() {
+                timeoutTimer = null;
+                xhr.abort();
+            }, param.timeout);
+        }
     };
 
     /**
@@ -107,7 +136,7 @@ var ajax = (function() {
             param.success(data);
         };
 
-        script.async = true;
+        script.async = !!param.async;
         script.charset = 'utf-8';
 
         script.src = getQueryUrl(param.url, data);
@@ -138,7 +167,12 @@ var ajax = (function() {
     var options = {
         type: 'GET',               // 请求类型
         url: '',                   // 请求url
+        async: true,               // 默认异步请求
+        timeout: null,             // 请求超时
         data: {},                  // 请求参数
+        header: {                  // 默认头信息
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
         dataType: 'json',          // 获取的数据类型
         jsonp: '',                 // jsonp
         success: function() {},    // 成功回调
@@ -156,11 +190,11 @@ var ajax = (function() {
      * @description Ajax 请求
      */
     return function(option) {
-        for(var key in options){
-            if(options.hasOwnProperty(key) && !option[key]){
-                option[key] = options[key];
+        forEachIn(options, function(key, value) {
+            if(!option[key]){
+                option[key] = value;
             }
-        }
+        });
         if(option.dataType === 'jsonp'){
             jsonp(option);
         } else {

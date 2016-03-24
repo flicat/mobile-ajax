@@ -13,13 +13,17 @@
     <script>
         ajax({
             type: 'GET',
-            url: 'test.php',
-            dataType: 'json',
-            data: {
-                test: 123
+            url: 'audio/audio.mp3',
+            header: {
+                'Content-Type': 'audio/mp3'
             },
-            success: function(data) {},
-            error: function() {}
+            dataType: 'text',
+            success: function(data) {
+                console.log('success');
+            },
+            error: function() {
+                console.log('error');
+            }
         });
     </script>
 </body>
