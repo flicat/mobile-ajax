@@ -53,12 +53,14 @@
             };
 
             ajax({
-                type: 'GET',
+                type: 'POST',
                 url: 'test/audio.mp3',
                 dataType: 'blob',
-                async: false,
                 header: {
                     'Content-Type': 'audio/mpeg'
+                },
+                beforeSend: function(xhr) {
+
                 },
                 success: function(data) {
                     var reader = new FileReader();

@@ -95,23 +95,24 @@ var ajax = (function() {
             postData = getQueryStr(param.data);
         }
 
+        if(param.dataType){
+            xhr.responseType = param.dataType;
+        }
+
+        xhr.open(param.type, param.url, !!param.async);
+
         // 请求超时
         param.timeout = Number(param.timeout) || 0;
-
-        xhr.responseType = param.dataType;
-        xhr.open(param.type, param.url, !!param.async);
+        if(param.timeout && param.timeout > 0){
+            xhr.timeout = param.timeout;
+        }
 
         forEachIn(param.header, function(name, value) {
             xhr.setRequestHeader(name, value);
         });
-        xhr.send(postData);
+        param.beforeSend(xhr);
 
-        if(param.timeout && param.timeout > 0){
-            timeoutTimer = setTimeout(function() {
-                timeoutTimer = null;
-                xhr.abort();
-            }, param.timeout);
-        }
+        xhr.send(postData);
     };
 
     /**
@@ -119,12 +120,12 @@ var ajax = (function() {
      * @description jsonp
      */
     var jsonp = function(param) {
-        var callback = param.jsonp || 'json_callback_' + Date().now(),
+        var callback = param.jsonp || 'json_callback_' + Date.now(),
             script = document.createElement("script"),
             head = document.head || document.querySelector('head') || document.documentElement;
 
         var data = param.data || {};
-        data['_'] = 'jsonp_' + Date().now();
+        data['_'] = 'jsonp_' + Date.now();
         data['callback'] = callback;
 
         window[callback] = function(data) {
@@ -171,6 +172,7 @@ var ajax = (function() {
         },
         dataType: '',              // 获取的数据类型
         jsonp: '',                 // jsonp
+        beforeSend: function() {}, // 请求发送前回调
         success: function() {},    // 成功回调
         error: function() {}       // 失败回调
     };
