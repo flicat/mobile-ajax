@@ -1,6 +1,6 @@
 /**
  * @author liyuelong1020@gmail.com
- * @date 15-5-8 下午6:00
+ * @date 2016-03-29
  * @version 1.0.0
  * @description Ajax
  */
@@ -71,15 +71,10 @@ var ajax = (function() {
 
                 if((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
                     var data;
-                    // 根据请求的数据类型转换数据
-                    if(String(param.dataType).toLowerCase() === 'json'){
-                        try {
-                            data = JSON.parse(xhr.responseText);
-                        } catch (e) {
-                            data = {};
-                        }
-                    } else {
-                        data = xhr.responseText;
+                    try {
+                        data = xhr.response || xhr.responseText;
+                    } catch (e) {
+                        data = '';
                     }
 
                     param.success(data);
@@ -103,6 +98,7 @@ var ajax = (function() {
         // 请求超时
         param.timeout = Number(param.timeout) || 0;
 
+        xhr.responseType = param.dataType;
         xhr.open(param.type, param.url, !!param.async);
 
         forEachIn(param.header, function(name, value) {
@@ -123,12 +119,12 @@ var ajax = (function() {
      * @description jsonp
      */
     var jsonp = function(param) {
-        var callback = param.jsonp || 'json_callback_' + (new Date() - 0),
+        var callback = param.jsonp || 'json_callback_' + Date().now(),
             script = document.createElement("script"),
             head = document.head || document.querySelector('head') || document.documentElement;
 
         var data = param.data || {};
-        data['_'] = 'jsonp_' + (new Date() - 0);
+        data['_'] = 'jsonp_' + Date().now();
         data['callback'] = callback;
 
         window[callback] = function(data) {
@@ -173,7 +169,7 @@ var ajax = (function() {
         header: {                  // 默认头信息
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        dataType: 'json',          // 获取的数据类型
+        dataType: '',              // 获取的数据类型
         jsonp: '',                 // jsonp
         success: function() {},    // 成功回调
         error: function() {}       // 失败回调
@@ -182,10 +178,7 @@ var ajax = (function() {
     /**
      * @param {String} type
      * @param {String} url
-     * @param {Boolean} async
-     * @param {Number} timeout
      * @param {Object} data
-     * @param {Object} header
      * @param {String} dataType
      * @param {String} jsonp
      * @param {Function} success

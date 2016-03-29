@@ -9,20 +9,69 @@
     <title>mobile ajax</title>
 </head>
 <body>
+    <div class="result" id="result"></div>
     <script src="js/ajax.js"></script>
     <script>
-        ajax({
-            type: 'GET',
-            url: 'test.php',
-            dataType: 'json',
-            data: {test: 'test'},
-            success: function(data) {
-                console.log('success');
-            },
-            error: function() {
-                console.log('error');
-            }
-        });
+        (function() {
+            var debug = (function() {
+                var elem = document.getElementById('result');
+                var toString = Object.prototype.toString;
+                return function(msg) {
+                    if(/String|Number/.test(toString.call(msg))){
+                        elem.innerHTML += msg + '<br>';
+                    } else {
+                        elem.innerHTML += toString.call(msg) + '<br>';
+                    }
+                }
+            })();
+
+            window.onerror = function(msg, url , line){
+                debug("Error: " + msg, "URL: " + url, "Line: " + line);
+                return false;
+            };
+
+            var createMusic = function(src) {
+                debug(src);
+
+                var music = new Audio();
+                music.src = src;
+                music.loop = true;
+                music.autoplay = false;
+
+                var isPlay = false;
+                document.addEventListener('touchstart', function(e) {
+                    debug(e);
+
+                    if(isPlay){
+                        isPlay = false;
+                        music.pause();
+                    } else {
+                        isPlay = true;
+                        music.play();
+                    }
+                }, false);
+            };
+
+            ajax({
+                type: 'GET',
+                url: 'test/audio.mp3',
+                dataType: 'blob',
+                async: false,
+                header: {
+                    'Content-Type': 'audio/mpeg'
+                },
+                success: function(data) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        createMusic(e.target.result);
+                    };
+                    reader.readAsDataURL(data);
+                },
+                error: function() {
+                    console.log('error');
+                }
+            });
+        })();
     </script>
 </body>
 </html>
