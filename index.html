@@ -7,73 +7,97 @@
     <meta name="screen-orientation" content="portrait">
     <meta name="x5-orientation" content="portrait">
     <title>mobile ajax</title>
+    <style>
+        html {
+            font-size: 4vw;
+        }
+        .result {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 1rem;
+            background-color: #000;
+            color: #fff;
+            font: 400 1rem/1.5em 'sans-serif';
+            word-break: break-all;
+        }
+    </style>
 </head>
 <body>
-    <div class="result" id="result"></div>
-    <script src="js/ajax.js"></script>
-    <script>
-        (function() {
-            var debug = (function() {
-                var elem = document.getElementById('result');
-                var toString = Object.prototype.toString;
-                return function(msg) {
-                    if(/String|Number/.test(toString.call(msg))){
-                        elem.innerHTML += msg + '<br>';
-                    } else {
-                        elem.innerHTML += toString.call(msg) + '<br>';
-                    }
+<div class="result" id="result"></div>
+<script src="js/ajax.js"></script>
+<script>
+    (function() {
+        var debug = (function() {
+            var elem = document.getElementById('result');
+            var toString = Object.prototype.toString;
+            return function(msg) {
+                var html = '';
+                if(/String|Number/.test(toString.call(msg))){
+                    html = String(msg).substr(0, 100);
+                } else {
+                    html = toString.call(msg);
                 }
-            })();
-
-            window.onerror = function(msg, url , line){
-                debug("Error: " + msg, "URL: " + url, "Line: " + line);
-                return false;
-            };
-
-            var createMusic = function(src) {
-                debug(src);
-
-                var music = new Audio();
-                music.src = src;
-                music.loop = true;
-                music.autoplay = false;
-
-                var isPlay = false;
-                document.addEventListener('touchstart', function(e) {
-                    debug(e);
-
-                    if(isPlay){
-                        isPlay = false;
-                        music.pause();
-                    } else {
-                        isPlay = true;
-                        music.play();
-                    }
-                }, false);
-            };
-
-            ajax({
-                type: 'POST',
-                url: 'test/audio.mp3',
-                dataType: 'blob',
-                header: {
-                    'Content-Type': 'audio/mpeg'
-                },
-                beforeSend: function(xhr) {
-
-                },
-                success: function(data) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        createMusic(e.target.result);
-                    };
-                    reader.readAsDataURL(data);
-                },
-                error: function() {
-                    console.log('error');
-                }
-            });
+                elem.innerHTML = html +
+                                '<br>-------------------------<br>' +
+                                elem.innerHTML;
+            }
         })();
-    </script>
+
+        window.onerror = function(msg, url , line){
+            debug("Error: " + msg, "URL: " + url, "Line: " + line);
+            return false;
+        };
+
+        var createMusic = function(src) {
+            var music = new Audio();
+            music.src = src;
+            music.loop = true;
+            music.autoplay = false;
+
+            debug(src);
+
+            var isPlay = false;
+            document.addEventListener('touchstart', function(e) {
+                if(isPlay){
+                    isPlay = false;
+                    music.pause();
+                } else {
+                    isPlay = true;
+                    music.play();
+                }
+
+                debug(e.type + ': ' + (isPlay ? 'play music': 'pause music'));
+            }, false);
+        };
+
+        ajax({
+            type: 'POST',
+            url: 'test/audio.mp3',
+            dataType: 'arraybuffer',
+            header: {
+                'Content-Type': 'audio/mpeg'
+            },
+            beforeSend: function(xhr) {
+                debug('ajax beforeSend: ' + ({}).toString.call(xhr));
+            },
+            success: function(data) {
+                debug('loaded: ' + ({}).toString.call(data));
+
+                var blob = new Blob([data], {type: 'audio/mpeg'});
+
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    createMusic(e.target.result);
+                };
+                reader.readAsDataURL(blob);
+
+                // createMusic((window.URL || window.webkitURL).createObjectURL(blob));
+            },
+            error: function() {
+                debug('ajax error');
+            }
+        });
+    })();
+</script>
 </body>
 </html>
