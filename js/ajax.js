@@ -5,7 +5,7 @@
  * @description Ajax
  */
 
-var ajax = (function() {
+var ajax = (function(require, exports) {
 
     /**
      * @param {Object} object
@@ -63,6 +63,9 @@ var ajax = (function() {
 
         var xhr = new XMLHttpRequest(), postData, timeoutTimer;
 
+        // 是否支持 responseType
+        var noSupportType = false;
+
         xhr.onreadystatechange = function() {
             if(xhr.readyState === 4){
 
@@ -77,6 +80,10 @@ var ajax = (function() {
                         data = '';
                     }
 
+                    if(noSupportType && param.dataType == 'json'){
+                        data = JSON.parse(data);
+                    }
+
                     param.success(data);
                 } else {
                     param.error(xhr);
@@ -84,19 +91,30 @@ var ajax = (function() {
             }
         };
 
-        if(String(param.type).toLowerCase() === 'get'){
+        if(({}).toString.call(param.data) === '[object FormData]') {
+            // 如果使用FormData提交数据
+            param.type = 'POST';
+            postData = param.data;
+        } else if(String(param.type).toLowerCase() === 'post'){
+            // 如果请求方式为 POST
+            param.type = 'POST';
+            postData = getQueryStr(param.data);
+        } else {
             // 如果请求方式为 GET
             param.type = 'GET';
             param.url = getQueryUrl(param.url, param.data);
             postData = null;
-        } else {
-            // 如果请求方式为 POST
-            param.type = 'POST';
-            postData = getQueryStr(param.data);
         }
 
         if(param.dataType){
-            xhr.responseType = param.dataType;
+            try {
+                xhr.responseType = param.dataType;
+                if(!xhr.responseType || xhr.responseType != param.dataType){
+                    noSupportType = true;
+                }
+            } catch (e) {
+                noSupportType = true;
+            }
         }
 
         xhr.open(param.type, param.url, !!param.async);
@@ -104,7 +122,13 @@ var ajax = (function() {
         // 请求超时
         param.timeout = Number(param.timeout) || 0;
         if(param.timeout && param.timeout > 0){
-            xhr.timeout = param.timeout;
+            try {
+                xhr.timeout = param.timeout;
+            } catch (e) {
+                setTimeout(function() {
+                    xhr.abort();
+                }, param.timeout);
+            }
         }
 
         forEachIn(param.header, function(name, value) {
