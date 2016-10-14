@@ -55,6 +55,88 @@ var ajax = (function(require, exports) {
         }
     };
 
+    // 根据格式返回数据
+    var getDataByType = function(data, type) {
+        try{
+            switch(String(type).toLowerCase()) {
+                case 'script': return new Function(data)(); break;
+                case 'json': return JSON.parse(data); break;
+                default: return data;
+            }
+        } catch(e) {
+            return data;
+        }
+    };
+
+    // 根据参数和请求地址生成缓存key
+    var getCacheKey = function(param) {
+        var name = String(param.url);
+        var key_arr = [];
+
+        if(({}).toString.call(param.data) === '[object Object]'){
+            forEachIn(param.data, function(key, value) {
+                key_arr.push(key + '=' + String(value));
+            });
+
+            key_arr.sort();
+        }
+
+        return name + '?' + key_arr.join('&');
+    };
+
+    // 缓存方法
+    var cache = (function() {
+        var ls = localStorage,
+            cache_name = '__ajax_cache__',
+            cacheData = [];
+
+        try{
+            cacheData = JSON.parse(ls[cache_name]);
+        } catch(e) {
+            cacheData = [];
+        }
+
+        if(({}).toString.call(cacheData) !== '[object Array]') {
+            cacheData = [];
+        }
+
+        var getData = function(id) {
+            for(var i = 0, len = cacheData.length; i < len; i++){
+                if(cacheData[i].id == id && cacheData[i].value){
+                    return cacheData[i];
+                }
+            }
+        };
+
+        return {
+
+            // 根据ajax参数返回缓存值
+            get_cache: function(id) {
+                var data = getData(id);
+                return data ? data.value : '';
+            },
+
+            // 设置缓存值
+            set_cache: function(id, value) {
+                var data = getData(id);
+
+                if(!data){
+                    data = {
+                        id: id
+                    };
+                    cacheData.push(data);
+                }
+
+                try{
+                    data.value = JSON.stringify(value);
+                    ls[cache_name] = JSON.stringify(cacheData);
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        };
+    })();
+
     /**
      * @param {options} param
      * @description XMLHttpRequest
@@ -65,6 +147,9 @@ var ajax = (function(require, exports) {
 
         // 是否支持 responseType
         var noSupportType = false;
+
+        // 缓存id
+        var cacheId = getCacheKey(param);
 
         xhr.onreadystatechange = function() {
             if(xhr.readyState === 4){
@@ -80,11 +165,19 @@ var ajax = (function(require, exports) {
                         data = '';
                     }
 
-                    if(noSupportType && param.dataType == 'json'){
-                        data = JSON.parse(data);
+                    if(noSupportType){
+                        data = getDataByType(data, param.dataType);
                     }
 
-                    param.success(data);
+                    // 如果使用缓存则保存到缓存中
+                    if(!!param.cache) {
+                        cache.set_cache(cacheId, data);
+                    }
+
+                    if(!cacheData || !param.cache) {
+                        param.success(data);
+                    }
+
                 } else {
                     param.error(xhr);
                 }
@@ -137,6 +230,15 @@ var ajax = (function(require, exports) {
         param.beforeSend(xhr);
 
         xhr.send(postData);
+
+        // 如果有缓存则使用缓存
+        if(!!param.cache) {
+            var cacheData = getDataByType(cache.get_cache(cacheId), param.dataType);
+            if(cacheData){
+                param.success(cacheData);
+            }
+        }
+
     };
 
     /**
@@ -190,6 +292,7 @@ var ajax = (function(require, exports) {
         url: '',                   // 请求url
         async: true,               // 默认异步请求
         timeout: null,             // 请求超时
+        cache: false,              // 是否使用缓存
         data: {},                  // 请求参数
         header: {                  // 默认头信息
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -206,6 +309,7 @@ var ajax = (function(require, exports) {
      * @param {String} url
      * @param {Object} data
      * @param {String} dataType
+     * @param {Boolean} cache
      * @param {String} jsonp
      * @param {Function} success
      * @param {Function} error
