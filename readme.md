@@ -8,6 +8,7 @@ ajax(param);
 > - @param {String} url                 // 请求url
 > - @param {Number} timeout             // 请求超时
 > - @param {Object} data                // 请求参数
+> - @param {Boolean} cache              // 是否使用缓存
 > - @param {Object} header              // 请求头信息
 > - @param {String} dataType            // 获取的数据类型  arraybuffer|blob|document|json|text|jsonp|''
 > - @param {String} jsonp               // jsonp 回调函数名称 dataType 为 jsonp 生效
