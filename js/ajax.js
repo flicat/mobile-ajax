@@ -29,8 +29,24 @@ var ajax = (function(require, exports) {
     var getQueryStr = function(data) {
         var str = [];
         data = data || {};
+
+        var eachArrParam = function(i, item) {
+            i += '[]';
+            item.forEach(function(subItem) {
+                if(Array.isArray(subItem)) {
+                    eachArrParam(i, subItem);
+                } else {
+                    str.push(encodeURIComponent(i) + '=' + encodeURIComponent(subItem));
+                }
+            });
+        };
+
         forEachIn(data, function(i, item) {
-            str.push(encodeURIComponent(i) + '=' + encodeURIComponent(item));
+            if(Array.isArray(item)) {
+                eachArrParam(i, item);
+            } else {
+                str.push(encodeURIComponent(i) + '=' + encodeURIComponent(item));
+            }
         });
         return str.join('&');
     };
@@ -235,7 +251,9 @@ var ajax = (function(require, exports) {
         if(!!param.cache) {
             var cacheData = getDataByType(cache.get_cache(cacheId), param.dataType);
             if(cacheData){
-                param.success(cacheData);
+                setTimeout(function() {
+                    param.success(cacheData);
+                }, 0);
             }
         }
 
