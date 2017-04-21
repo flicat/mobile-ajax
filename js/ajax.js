@@ -134,7 +134,8 @@ var ajax = (function(require, exports) {
 
             // 设置缓存值
             set_cache: function(id, value) {
-                var data = getData(id);
+                var data = getData(id), isModify = true;
+
 
                 if(!data){
                     data = {
@@ -144,11 +145,23 @@ var ajax = (function(require, exports) {
                 }
 
                 try{
-                    data.value = JSON.stringify(value);
-                    ls[cache_name] = JSON.stringify(cacheData);
+
+                    var newValue = JSON.stringify(value);
+                    // 判断数据是否变更
+                    isModify = !(newValue === data.value);
+
+                    // 如果返回的结果跟缓存不一致则替换旧缓存
+                    if(isModify){
+                        data.value = newValue;
+                        ls.setItem(cache_name, JSON.stringify(cacheData));
+                    }
+
                 } catch(e) {
                     console.error(e);
                 }
+
+                return isModify;
+
             }
         };
     })();
@@ -159,13 +172,11 @@ var ajax = (function(require, exports) {
      */
     var ajax = function(param) {
 
-        var xhr = new XMLHttpRequest(), postData, timeoutTimer;
-
-        // 是否支持 responseType
-        var noSupportType = false;
-
-        // 缓存id
-        var cacheId = getCacheKey(param);
+        var xhr = new XMLHttpRequest(),
+            postData,
+            timeoutTimer,  // 请求超时计时器
+            cacheId,       // 缓存id
+            noSupportType = false;      // 是否支持 responseType
 
         xhr.onreadystatechange = function() {
             if(xhr.readyState === 4){
@@ -174,7 +185,7 @@ var ajax = (function(require, exports) {
                 timeoutTimer && clearTimeout(timeoutTimer);
 
                 if((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304) {
-                    var data;
+                    var data, isModify = true;
                     try {
                         data = xhr.response || xhr.responseText;
                     } catch (e) {
@@ -186,11 +197,12 @@ var ajax = (function(require, exports) {
                     }
 
                     // 如果使用缓存则保存到缓存中
-                    if(!!param.cache) {
-                        cache.set_cache(cacheId, data);
+                    if(({}).toString.call(param.cache) === "[object Function]") {
+                        isModify = cache.set_cache(cacheId, data);
                     }
 
-                    if(!cacheData || !param.cache) {
+                    // 如果缓存数据有变化则调用  success 方法
+                    if(isModify){
                         param.success(data);
                     }
 
@@ -248,11 +260,15 @@ var ajax = (function(require, exports) {
         xhr.send(postData);
 
         // 如果有缓存则使用缓存
-        if(!!param.cache) {
+        if(({}).toString.call(param.cache) === "[object Function]") {
+            // 缓存id
+            cacheId = getCacheKey(param);
+
             var cacheData = getDataByType(cache.get_cache(cacheId), param.dataType);
+
             if(cacheData){
                 setTimeout(function() {
-                    param.success(cacheData);
+                    param.cache(cacheData);
                 }, 0);
             }
         }
@@ -310,13 +326,13 @@ var ajax = (function(require, exports) {
         url: '',                   // 请求url
         async: true,               // 默认异步请求
         timeout: null,             // 请求超时
-        cache: false,              // 是否使用缓存
         data: {},                  // 请求参数
         header: {                  // 默认头信息
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         dataType: '',              // 获取的数据类型
         jsonp: '',                 // jsonp
+        cache: null,               // 使用缓存时回调
         beforeSend: function() {}, // 请求发送前回调
         success: function() {},    // 成功回调
         error: function() {}       // 失败回调
