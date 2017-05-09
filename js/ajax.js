@@ -252,6 +252,12 @@ var ajax = (function(require, exports) {
             }
         }
 
+        // 页面刷新时则停止请求
+        window.addEventListener('beforeunload', function() {
+            xhr.onreadystatechange = null;
+            xhr.abort();
+        });
+
         forEachIn(param.header, function(name, value) {
             xhr.setRequestHeader(name, value);
         });
