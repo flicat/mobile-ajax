@@ -23,7 +23,13 @@
     </style>
 </head>
 <body>
-<div class="result" id="result"></div>
+<div class="result" id="result" style="display: none"></div>
+
+<form action="ajax.php" id="form" method="post">
+    <input type="file" name="photo"/>
+    <input type="text" name="name"/>
+    <button type="button" id="submit">提交</button>
+</form>
 <script src="js/ajax.js"></script>
 <script>
     (function() {
@@ -97,7 +103,55 @@
                 debug('ajax error');
             }
         });
-    })();
+    });
+
+
+    (function() {
+        var form = document.getElementById('form');
+        var button = document.getElementById('submit')
+                ;
+        var dataURLtoBlob = function (dataurl) {
+            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], {type:mime});
+        }
+
+        button.addEventListener('click', function() {
+
+            var formData = new FormData();
+
+
+            var fileReader = new FileReader();
+            fileReader.onload = function(e) {
+
+                formData.append('name', form.name.value);
+                formData.append('photo[]', dataURLtoBlob(fileReader.result), 'photo1.jpg');
+                formData.append('photo[]', dataURLtoBlob(fileReader.result), 'photo2.jpg');
+                formData.append('photo[]', dataURLtoBlob(fileReader.result), 'photo3.jpg');
+
+                ajax({
+                    type: 'POST',
+                    url: 'ajax.php',
+                    dataType: 'JSON',
+                    data: formData,
+                    success: function(data) {
+                        console.log(data);
+                    },
+                    error: function() {
+
+                    }
+                });
+
+            };
+
+            fileReader.readAsDataURL(form.photo.files[0]);
+
+        });
+
+    })()
 </script>
 </body>
 </html>
