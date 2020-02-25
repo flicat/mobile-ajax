@@ -12,6 +12,32 @@ jobs:
     steps:
       - name: print msg
         env:
-          GITHUB_REF: ${{ github }}
+          github_event_path: ${{ github.event_path }}
+          github_workflow: ${{ github.workflow }}
+          github_run_id: ${{ github.run_id }}
+          github_run_number: ${{ github.run_number }}
+          github_actor: ${{ github.actor }}
+          github_repository: ${{ github.repository }}
+          github_event_name: ${{ github.event_name }}
+          github_sha: ${{ github.sha }}
+          github_ref: ${{ github.ref }}
+          github_head_ref: ${{ github.head_ref }}
+          github_base_ref: ${{ github.base_ref }}
+          github_token: ${{ github.token }}
+          github_workspace: ${{ github.workspace }}
+          github_action: ${{ github.action }}
         run: |
-          echo $GITHUB_REF
+          echo github_event_path: $github_event_path
+          echo github_workflow: $github_workflow
+          echo github_run_id: $github_run_id
+          echo github_run_number: $github_run_number
+          echo github_actor: $github_actor
+          echo github_repository: $github_repository
+          echo github_event_name: $github_event_name
+          echo github_sha: $github_sha
+          echo github_ref: $github_ref
+          echo github_head_ref: $github_head_ref
+          echo github_base_ref: $github_base_ref
+          echo github_token: $github_token
+          echo github_workspace: $github_workspace
+          echo github_action: $github_action
