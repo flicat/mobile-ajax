@@ -12,6 +12,6 @@ jobs:
     steps:
       - name: print msg
         env:
-          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REF: ${{ github }}
         run: |
           echo $GITHUB_REF
