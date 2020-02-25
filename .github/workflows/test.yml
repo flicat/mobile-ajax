@@ -1,6 +1,7 @@
 on:
   push:
-    - test
+    branches:
+      - master
 
 name: test print
 
