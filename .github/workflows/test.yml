@@ -1,22 +1,16 @@
-on:
-  push:
-    branches:
-      - master
+on: push
 
 name: test print
 
 jobs:
-  build:
+  my-job:
     name: test print
     runs-on: ubuntu-latest
     steps:
       - name: print msg
         env:
           GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-          GITHUB: ${{ github }}
+          GITHUB_INFO: ${{ github }}
           GITHUB_REF: ${{ github.ref }}
         run: |
-          echo $GITHUB_TOKEN
-          echo $GITHUB
-          echo $GITHUB_REF
-      
+          echo $GITHUB_TOKEN $GITHUB_INFO $GITHUB_REF
